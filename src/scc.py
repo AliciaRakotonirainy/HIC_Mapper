@@ -29,19 +29,35 @@ class SCCMatrix():
         self.pairwise_scc_matrix = None
         self.pairwise_distance_matrix = None
 
-        self.smooth_matrices = []
-        self.slices_matrices = []
+        self.smooth_matrices = [] # [ [smoothed matrix cell 1 chr1, smoothed matrix cell 1 chr2, ..., smoothed matrix cell 1 chr21], 
+                                #     [smoothed matrix cell 2 chr1, smoothed matrix cell 2 chr2, ..., smoothed matrix cell 2 chr21],
+                                #     [ ... ],
+                                #     [smoothed matrix cell n chr1, smoothed matrix cell n chr2, ..., smoothed matrix cell n chr21]]
+        self.slices_matrices = [] # [ [slices cell 1 chr 1, slices cell 1 chr2, ..., slices cell 1 chr21 ],
+                                #     [slices cell 2 chr 1, slices cell 2 chr2, ..., slices cell 2 chr21 ],
+                                #     [ ... ],
+                                #     [slices cell n chr 1, slices cell n chr2, ..., slices cell n chr21 ]
 
         self.load_data()
 
     def load_data(self):
-        #self.chromosomes = pd.read_table(self.chromosomes_path, header=None)
-        #self.chromosomes.columns = ["chr", "start", "end"]
+        self.chromosomes = pd.read_table(self.chromosomes_path, header=None)
+        self.chromosomes.columns = ["chr", "start", "end"]
 
         # randomly sample the desired number of cells
         self.contact_maps_files = random.sample(
                                         os.listdir(self.hic_matrices_folder), 
                                         self.n_cells_sampling)
+        
+    def separate_chromosomes(self, mat):
+        mat_chrom = []
+        for i in range(len(self.chromosomes)):
+            mat_chrom.append(mat[
+                                self.chromosomes.iloc[i, 1]:self.chromosomes.iloc[i, 2]+1, 
+                                self.chromosomes.iloc[i, 1]:self.chromosomes.iloc[i, 2]+1 # +1 because excluded
+                                ]
+                            )      
+        return mat_chrom 
         
     def smooth_average(self, mat, h):
         """ 
@@ -56,12 +72,13 @@ class SCCMatrix():
         """
         slices = []
         # we create n slices, with n the number of windows in the data matrix
-        for k in range(self.n_slices_max-1):
+        n = min(self.n_slices_max, mat.shape[0])
+        for k in range(n - 1):
             # the slice k contains all the contacts (i,j) such that abs(j-i) = k
             # ie in slice k, all the contacts are made within [k*b, (k+1)*b] of genomic distance 
             # we take only slice with at least 2 elements
             slices.append(
-                np.array([mat[i, i+k] for i in range(self.n_slices_max-k)]) 
+                np.array([mat[i, i+k] for i in range(n-k)]) 
             )
 
         return slices
@@ -69,38 +86,46 @@ class SCCMatrix():
     
     def compute_scc(self, slices_1, slices_2, h):
         """ 
-        Computes the SCC between 2 contact matrices, average smoothing them with window size h
+        TO BE UPDATED
         """
-        
-        # check we have the same number of slices in both matrices
-        assert len(slices_1) == len(slices_2)
-        K = len(slices_1)
-
-        num = sum([len(slices_1[k]) * np.cov(
+        # we define the scc as the mean of the intra-chromosomes scc
+        scc = []
+        for ch in range(len(slices_1)):
+            K = len(slices_1[ch])
+            num = sum([len(slices_1[ch][k]) * np.cov(
                     np.concatenate(
-                        (slices_1[k].reshape(1, -1),
-                        slices_2[k].reshape(1, -1))
+                        (slices_1[ch][k].reshape(1, -1),
+                        slices_2[ch][k].reshape(1, -1))
                         )
                     )[0,1]
-        for k in range(K)
-        ])
-        deno = sum([len(slices_1[k]) * np.std(slices_1[k]) * np.std(slices_2[k])
-                for k in range(K)
-        ])
+            for k in range(K)
+            ])
+            deno = sum([len(slices_1[ch][k]) * np.std(slices_1[ch][k]) * np.std(slices_2[ch][k])
+                    for k in range(K)
+            ])
+            if deno != 0:
+                scc.append(num/deno)
 
-        return num/deno
+        return np.mean(scc)
     
     def smooth_all(self,h):
         for i in range(self.n_cells_sampling):
             mat_i = sc.sparse.load_npz(self.hic_matrices_folder + self.contact_maps_files[i] + "/cmatrix_500k.npz")
             mat_i_arr = mat_i.toarray()
-            mat_i_smooth = self.smooth_average(mat_i_arr, h)
-            self.smooth_matrices.append(mat_i_smooth)
+            mat_i_chrom = self.separate_chromosomes(mat_i_arr)
+
+            mat_i_chrom_smooth = []
+            for ch in range(len(mat_i_chrom)):
+                mat_i_chrom_smooth.append( self.smooth_average(mat_i_chrom[ch], h) )
+            self.smooth_matrices.append(mat_i_chrom_smooth)
 
     def slices_all(self):
         for i in range(self.n_cells_sampling):
+            mat_i_slices = []
+            for ch in range(len(self.smooth_matrices[i])):
+                mat_i_slices.append( self.compute_slices(self.smooth_matrices[i][ch]) )
             self.slices_matrices.append( 
-                                self.compute_slices(self.smooth_matrices[i])
+                                mat_i_slices
                                 )
 
     def compute_pairwise_scc(self):
