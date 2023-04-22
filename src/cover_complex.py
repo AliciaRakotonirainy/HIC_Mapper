@@ -196,6 +196,7 @@ class MapperComplex(CoverComplexPy):
         """
         num_pts = X.shape[0]
         delta, m = 0., int(  num_pts / np.exp((1+beta) * np.log(np.log(num_pts)/np.log(C)))  )
+        print("VALUE OF m :", m)
         for _ in range(N):
             subpop = np.random.choice(num_pts, size=m, replace=False)
             if self.input_type == "point cloud":
@@ -322,7 +323,7 @@ class MapperComplex(CoverComplexPy):
             for i in range(num_filters):
                 f, r, g = self.filters[:,i], self.resolutions[i], self.gains[i]
                 min_f, max_f = self.filter_bnds[i,0], np.nextafter(self.filter_bnds[i,1], np.inf)
-                interval_endpoints, l = np.linspace(min_f, max_f, num=r+1, retstep=True)
+                interval_endpoints, l = np.linspace(min_f, max_f, num=int(r+1), retstep=True)
                 intersec_endpoints = []
                 for j in range(1, len(interval_endpoints)-1):
                     intersec_endpoints.append(interval_endpoints[j] - g*l / (2 - 2*g))
