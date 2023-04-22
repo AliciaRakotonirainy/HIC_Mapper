@@ -17,7 +17,7 @@ Hi-c data have certain unique characteristics, that cannot be taken into account
 - Distance dependence : chromatin interaction between 2 loci decrease substantially as their genomic distance increases. This pattern is generally thought to result from nonspecific (= silent) interactions, which are more likely to occur between closer genomic distances. This pattern results in high Pearson correlation between any two Hi-C matrices, even when the samples are unrelated. Therefore, the Pearson correlation cannot distinguish real biological replicates from unrelated samples!
 
 
-Steps to calculate de SCC : 
+Steps to calculate the SCC : 
 - Minimizes the effect of noise by smoothing the Hi-C matrix; it makes the domain structures more visible. For smoothing, they apply a 2D mean filter.
 - Addresses the distance-dependence effect by stratifying Hi-C data according to their genomic distance ; they cut the matrices into stratas with similar genomic distance
 - SCC : Calculate Pearson correlation for each stratum ; and then aggregating all Pearson correlations coeffs using a weighted average. The weights are derived from the generalized Cochran-Mantel-Haenszel (CMH) statistic (the exact expression is given in the Methods part)
@@ -31,3 +31,11 @@ On veut représenter nos cellules sous forme de Mapper Graph. Le but est de voir
 2. On calcule un Kernel PCA sur cette matrice de distances. Les 2 premières composantes sont notre "lens" = "filter".
 
 3. On calcule le graph Mapper à partir de notre matrice de distance et du filter qu'on a choisi.
+
+### TO DO next 
+
+Hyperparameter tuning : 
+- Try various Mapper and SCC parameters, and interpret their influence on the Mapper shape
+- Find a set of parameters fro which the cell cycle can be detected as a big loop in the Mapper
+- Quantify the cell cycle statistical robustness
+- Compare the results with basic dimensionality reduction on the raw contact maps
