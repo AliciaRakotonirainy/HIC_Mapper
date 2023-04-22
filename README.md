@@ -35,7 +35,7 @@ On veut représenter nos cellules sous forme de Mapper Graph. Le but est de voir
 ### TO DO next 
 
 Hyperparameter tuning : 
-- Try various Mapper and SCC parameters, and interpret their influence on the Mapper shape
-- Find a set of parameters fro which the cell cycle can be detected as a big loop in the Mapper
-- Quantify the cell cycle statistical robustness
-- Compare the results with basic dimensionality reduction on the raw contact maps
+- [ ] Try various Mapper and SCC parameters, and interpret their influence on the Mapper shape
+- [X] Find a set of parameters fro which the cell cycle can be detected as a big loop in the Mapper 
+- [ ] Quantify the cell cycle statistical robustness
+- [ ] Compare the results with basic dimensionality reduction on the raw contact maps
