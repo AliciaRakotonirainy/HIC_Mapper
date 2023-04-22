@@ -196,7 +196,6 @@ class MapperComplex(CoverComplexPy):
         """
         num_pts = X.shape[0]
         delta, m = 0., int(  num_pts / np.exp((1+beta) * np.log(np.log(num_pts)/np.log(C)))  )
-        print("VALUE OF m :", m)
         for _ in range(N):
             subpop = np.random.choice(num_pts, size=m, replace=False)
             if self.input_type == "point cloud":
