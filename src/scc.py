@@ -14,6 +14,7 @@ class SCCMatrix():
                  n_cells_sampling,
                  h,
                  n_slices_max,
+                 sample_repeat = False,
                  seed=27):
         """ 
         This class computes the pairwise SCC and distance matrices.
@@ -30,6 +31,7 @@ class SCCMatrix():
         self.h = h
         self.n_slices_max = n_slices_max
         self.seed = seed
+        self.sample_repeat = sample_repeat
         
         self.contact_maps_files = None
         self.pairwise_scc_matrix = None
@@ -43,7 +45,13 @@ class SCCMatrix():
     def load_data(self):
         # randomly sample the desired number of cells
         np.random.seed(self.seed)
-        self.contact_maps_files = random.sample(
+        if self.sample_repeat == True:
+            for x in range(self.n_cells_sampling):
+                self.contact_maps_files.append(random.sample(
+                                        os.listdir(self.hic_matrices_folder), 
+                                        1))
+        else: 
+            self.contact_maps_files = random.sample(
                                         os.listdir(self.hic_matrices_folder), 
                                         self.n_cells_sampling)
         
