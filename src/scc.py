@@ -45,9 +45,10 @@ class SCCMatrix():
     def load_data(self):
         # randomly sample the desired number of cells
         np.random.seed(self.seed)
+        self.contact_maps_files = []
         if self.sample_repeat == True:
             for x in range(self.n_cells_sampling):
-                self.contact_maps_files.append(random.sample(
+                self.contact_maps_files.extend(random.sample(
                                         os.listdir(self.hic_matrices_folder), 
                                         1))
         else: 
