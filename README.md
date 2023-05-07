@@ -2,6 +2,13 @@
 
 Clone this repository.
 
+Create a new conda environment : 
+
+```bash
+conda create --name gmda --file requirements.txt
+conda activate gmda
+```
+
 Go in the `src/` directory, and launch this command:
 
 ```bash
