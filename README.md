@@ -1,41 +1,33 @@
-Ressources très utiles :
+# Code reproducibility
 
-- L'article de Mathieu Carrière qui décrit exactement le travail qu'on est en train de faire ([article](https://www.biorxiv.org/content/10.1101/486936v1.full))
-- Bonne ressource qui réexplique bien ce qu'est Mapper et ses paramètres ([blog](https://medium.datadriveninvestor.com/the-mapper-algorithm-d0842f926658))
-- Article donnant la définition du SCC ([article](https://pubmed.ncbi.nlm.nih.gov/28855260/))
+Clone this repository.
 
-## Résumé de l'article "HiCRep: assessing the reproducibility of Hi-C data using a stratum-adjusted correlation coefficient"
+Go in the `src/` directory, and launch this command:
 
-They define the SCC, a new new similarity measure, that quantifies the similarity between Hi-C interaction matrices (= contact matrices = contact maps).
+```bash
+python main.py --n_sample=100 --GAIN=0.37 --RES=5 --sample_replacement=False --data_path="../data/" --output_path="../output/"
+```
 
-Why is it useful ? 
-- Assess the reproducibility of replicate samples (2 biologcial replicates should have a high similarity)
-- Quantify the distance bewteen Hi-C matrices from different cell types
+The mapper graphs (colored with the 3 markers related with cell cycle) are saved in the `output/` folder at the root directory, as `.png` images. The name of the images is of the form: `mapper_${marker_name}_${n_sample}_${RES}_${GAIN}.png`
 
-Hi-c data have certain unique characteristics, that cannot be taken into account using only Pearson/Spearman correlation between 2 Hi-C matrices:
-- Specific domain structure : Hi-C matrices present contiguous regions in which loci tend to interact more frequently. Those regions are stable across cell types (even if the particular interactions whithin the regions are variable between cell types). But Pearson/Spearman correlation only consider point interactions and do not take region-scale information into account! So Spearman correlation can be driven to low values by the stochastic variation in the point interactions and overlook the similarity in domain structures.
-- Distance dependence : chromatin interaction between 2 loci decrease substantially as their genomic distance increases. This pattern is generally thought to result from nonspecific (= silent) interactions, which are more likely to occur between closer genomic distances. This pattern results in high Pearson correlation between any two Hi-C matrices, even when the samples are unrelated. Therefore, the Pearson correlation cannot distinguish real biological replicates from unrelated samples!
+`--n_sample` : int, Number of cells drawn to do the analysis
 
+`--sample_replacement` : bool, Sample cells with replacement
 
-Steps to calculate the SCC : 
-- Minimizes the effect of noise by smoothing the Hi-C matrix; it makes the domain structures more visible. For smoothing, they apply a 2D mean filter.
-- Addresses the distance-dependence effect by stratifying Hi-C data according to their genomic distance ; they cut the matrices into stratas with similar genomic distance
-- SCC : Calculate Pearson correlation for each stratum ; and then aggregating all Pearson correlations coeffs using a weighted average. The weights are derived from the generalized Cochran-Mantel-Haenszel (CMH) statistic (the exact expression is given in the Methods part)
+`--GAIN` : float, Gain parameter (Mapper)
 
-## Résumé de notre projet
+`--RES` : int, Resolution parameter (Mapper)
 
-On veut représenter nos cellules sous forme de Mapper Graph. Le but est de voir que les cellules se regroupent en fonction de leur stade de cycle cellulaire ; on devrait voir apparaître une grande boucle.  
+`--data_path` : str, Path to the data folder. Should end with '/'. It should contain the folder 'hic-matrices', with the folders containing each contact map file. It should also contain the 'features.txt' file.
 
-1. Calculer la matrice de distances deux-à-deux pour chaque cellules. ⚠️ Le SCC est un score de similarité. On le convertit donc en une distance avec la formule : $d(X,Y) = \sqrt{SCC(X,X) + SCC(Y,Y) - 2SCC(X,Y)}$ (produit scalaire -> norme)
+`--output_path` : str, Path to folder where the mapper graph will be saved. Should end with '/' .
 
-2. On calcule un Kernel PCA sur cette matrice de distances. Les 2 premières composantes sont notre "lens" = "filter".
+# Context
 
-3. On calcule le graph Mapper à partir de notre matrice de distance et du filter qu'on a choisi.
+In this project, we analyzed a data set of single-cell Hi-C contact maps.
 
-### TO DO next 
+Single-cell Hi-C (scHi-c) can quantifies the three-dimensional chromatin organization. These 3D genome features are related with vital genome functionalities. scHi-c experiments can be summarized into so-called "Hi-c contact maps". These are pairwise distance matrices that encode how chromatin is folded in the nucleus of a cell. More precisely, each row and column of the matrix represents a small DNA window, and each entry in the matrix is the spatial distance between these windows in the nucleus.
 
-Hyperparameter tuning : 
-- [ ] Try various Mapper and SCC parameters, and interpret their influence on the Mapper shape
-- [X] Find a set of parameters fro which the cell cycle can be detected as a big loop in the Mapper 
-- [ ] Quantify the cell cycle statistical robustness
-- [ ] Compare the results with basic dimensionality reduction on the raw contact maps
+Yang et al (2017) proposed a new similarity measure called Stratum-Adjusted Correlation Coefficient (SCC). It quantifies the similarity between Hi-C contact maps. It can be used to assess the reproducibility of replicate samples, as well as quantify the distance between Hi-C matrices from different cell types or conditions. This is this latest application that we will consider in this project.
+
+The 3D-structure of DNA varies with the cell cycle. For instance, chromosomes tend to fold up before mitosis, and then unfold in order to enable DNA transcription. The goal of this project was to detect the cell cycle as a big loop in the Mapper Graph, based on contact maps processed using SCC. We first computed the pairwise SCC matrix (that quantifies the distance between contact maps of all pairs of cells). Then, we found a set of parameters for which the cell cycle loop can be detected in the Mapper graph. Then, we proved that this loop indeed represents the cell cycle by coloring the Mapper nodes with various markers correlated with the cell cycle. 
